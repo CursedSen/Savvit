@@ -105,10 +105,27 @@ function addDownloadButton(mediaElement) {
         }
         filename = `Savvit_${Date.now()}_${filename}`;
 
-        chrome.runtime.sendMessage({
-          action: 'download',
-          url: url,
-          filename: filename
+        chrome.storage.sync.get({
+          downloadPath: 'Downloads/Savvit',
+          askSave: false,
+          addTitle: true,
+          subredditFolders: false
+        }, (settings) => {
+          let finalPath = settings.downloadPath;
+          
+          if (settings.subredditFolders && !window.location.hostname.includes('4chan.org')) {
+            const subreddit = window.location.pathname.split('/')[2];
+            if (subreddit) {
+              finalPath += '/' + subreddit;
+            }
+          }
+          
+          chrome.runtime.sendMessage({
+            action: 'download',
+            url: url,
+            filename: `${finalPath}/${filename}`,
+            saveAs: settings.askSave
+          });
         });
       } catch (error) {
         console.error('Download failed:', error);
