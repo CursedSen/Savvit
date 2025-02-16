@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Savvit",
-  "version": "0.1.0",
+  "version": "0.0.0",
   "description": "Finally an extension that properly saves Reddit and 4chan posts!",
   "author": "Sen",
   "homepage_url": "https://github.com/CursedSen/Savvit",
@@ -9,7 +9,7 @@
     "downloads",
     "activeTab"
   ],
-  "host_permissions": [
+"host_permissions": [
     "*://*.reddit.com/*",
     "*://*.redd.it/*",
     "*://*.redditstatic.com/*",
