@@ -5,15 +5,15 @@ function saveSettings() {
     addTitle: document.getElementById('addTitle').checked,
     subredditFolders: document.getElementById('subredditFolders').checked
   };
-  
+
   chrome.storage.sync.set(settings);
 }
 
 function loadSettings() {
   chrome.storage.sync.get({
-    downloadPath: 'Downloads/Savvit',
-    askSave: false,
-    addTitle: true,
+    downloadPath: 'Downloads/Savvit',  
+    askSave: false,                    
+    addTitle: true,                    
     subredditFolders: false
   }, (settings) => {
     document.getElementById('downloadPath').value = settings.downloadPath;

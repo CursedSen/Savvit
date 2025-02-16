@@ -180,3 +180,7 @@ if (document.readyState === 'loading') {
 } else {
   observeContent();
 }
+
+chrome.runtime.sendMessage({ action: 'getSettings' }, (response) => {
+  console.log(response.settings);
+});
