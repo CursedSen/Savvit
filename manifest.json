@@ -1,0 +1,36 @@
+{
+  "manifest_version": 3,
+  "name": "Savvit",
+  "version": "0.1.0",
+  "description": "Finally an extension that properly saves Reddit and 4chan posts!",
+  "author": "Sen",
+  "homepage_url": "https://github.com/CursedSen/Savvit",
+  "permissions": [
+    "downloads",
+    "activeTab"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "*://*.reddit.com/*",
+        "*://*.4chan.org/*",
+        "*://*.4channel.org/*"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "css": [
+        "styles.css"
+      ]
+    }
+  ],
+  "icons": {
+    "48": "icon48.png",
+    "128": "icon128.png"
+  },
+  "short_name": "Savvit",
+  "offline_enabled": true
+}
