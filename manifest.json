@@ -9,6 +9,14 @@
     "downloads",
     "activeTab"
   ],
+  "host_permissions": [
+    "*://*.reddit.com/*",
+    "*://*.redd.it/*",
+    "*://*.redditstatic.com/*",
+    "*://*.imgur.com/*",
+    "*://*.4chan.org/*",
+    "*://*.4cdn.org/*"
+  ],
   "background": {
     "service_worker": "background.js"
   },
