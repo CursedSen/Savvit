@@ -3,8 +3,7 @@ function addDownloadButton(mediaElement) {
     mediaElement.parentElement.querySelector('.reddit-download-btn') ||
     mediaElement.closest('.ProfileAvatar') ||
     mediaElement.closest('[data-testid="user-avatar"]') ||
-    mediaElement.closest('.SubredditIconView') ||
-    mediaElement.width < 100
+    mediaElement.closest('.SubredditIconView')
   ) {
     return;
   }
@@ -21,27 +20,61 @@ function addDownloadButton(mediaElement) {
 
     if (window.location.hostname.includes('4chan.org')) {
       if (mediaElement.tagName === 'IMG') {
-        url = mediaElement.src.replace('//is2.4chan.org', '//i.4cdn.org');
+        const linkElement = mediaElement.closest('a.fileThumb');
+        url = linkElement ? linkElement.href : mediaElement.src.replace('//is2.4chan.org', '//i.4cdn.org');
       } else if (mediaElement.tagName === 'VIDEO') {
         url = mediaElement.src;
       }
     } else {
       if (mediaElement.tagName === 'IMG') {
-        url = mediaElement.src.replace(/\.gifv$/, '.gif');
+        url = mediaElement.src;
+        
         if (url.includes('preview.redd.it')) {
-          url = url.replace('preview.redd.it', 'i.redd.it');
+            const postIdMatch = url.match(/preview\.redd\.it\/(.*?)(?:\.(\w+))?(?:\?|$)/i);
+            if (postIdMatch) {
+                const [, postId, ext] = postIdMatch;
+                const extension = ext || 'png';
+                const cleanPostId = postId.split('-').pop();
+                url = `https://i.redd.it/${cleanPostId}.${extension}`;
+            }
+        } else if (url.includes('external-preview.redd.it')) {
+            const urlObj = new URL(url);
+            const actualUrl = urlObj.searchParams.get('url');
+            if (actualUrl) {
+                url = decodeURIComponent(actualUrl);
+            } else {
+                const match = url.match(/external-preview\.redd\.it\/(\w+)(?:\.(\w+))?/i);
+                if (match) {
+                    const [, postId, ext] = match;
+                    const extension = ext || 'png';
+                    url = `https://i.redd.it/${postId}.${extension}`;
+                }
+            }
+        }
+        
+        url = url.split('?')[0]
+                .replace(/&amp;/g, '&')
+                .replace(/\.htm$/, '');
+        
+        if (url.includes('imgur.com')) {
+          url = url.replace(/\?.*$/, '')
+                   .replace(/\.gifv$/, '.gif');
         }
       } else if (mediaElement.tagName === 'VIDEO') {
         const videoElement = mediaElement.tagName === 'SOURCE' ? mediaElement.parentElement : mediaElement;
-
-        if (videoElement.src.includes('packaged-media.redd.it')) {
-          url = videoElement.src.replace(/_\d+p\.mp4.*$/, '');
-        } else if (videoElement.src.includes('v.redd.it')) {
-          url = videoElement.src.split('DASH')[0].replace(/_\d+\.mp4.*$/, '');
+        
+        if (videoElement.src.includes('v.redd.it')) {
+          url = videoElement.src;
+          if (!url.includes('DASH')) {
+            url = url.split('?')[0].replace(/_[0-9]+\.mp4/, '.mp4');
+          }
         } else {
           const sources = videoElement.querySelectorAll('source');
           if (sources.length > 0) {
-            url = sources[0].src.split('?')[0];
+            url = Array.from(sources)
+              .map(source => source.src)
+              .sort((a, b) => b.localeCompare(a))[0]
+              .split('?')[0];
           } else {
             url = videoElement.src.split('?')[0];
           }
@@ -52,12 +85,23 @@ function addDownloadButton(mediaElement) {
     if (url) {
       try {
         let filename = url.split('/').pop().split('?')[0];
+        filename = filename.replace(/\.htm$/, '');
         if (!filename.includes('.')) {
-          if (mediaElement.tagName === 'VIDEO' || mediaElement.tagName === 'SOURCE') {
-            filename += '.mp4';
-          } else {
-            filename += '.gif';
-          }
+            if (mediaElement.tagName === 'VIDEO' || mediaElement.tagName === 'SOURCE') {
+                filename += '.mp4';
+            } else {
+                if (url.includes('.jpg') || url.includes('.jpeg')) {
+                    filename += '.jpg';
+                } else if (url.includes('.png')) {
+                    filename += '.png';
+                } else if (url.includes('.gif')) {
+                    filename += '.gif';
+                } else if (url.includes('.webp')) {
+                    filename += '.webp';
+                } else {
+                    filename += '.jpg';
+                }
+            }
         }
         filename = `Savvit_${Date.now()}_${filename}`;
 
@@ -81,73 +125,52 @@ function addDownloadButton(mediaElement) {
     container.style.position = 'relative';
     container.appendChild(wrapper);
   } else {
-    const container = mediaElement.closest('div[data-click-id="media"], div[data-click-id="image_media"]') || mediaElement.parentElement;
-    if (container) {
-      container.style.position = 'relative';
-      container.appendChild(wrapper);
-    } else {
-      mediaElement.parentElement.style.position = 'relative';
-      mediaElement.parentElement.appendChild(wrapper);
-    }
+    const container = mediaElement.closest('div[data-click-id="media"], div[data-test-id="post-content"], .media-element') || mediaElement.parentElement;
+    container.style.position = 'relative';
+    container.appendChild(wrapper);
   }
 }
 
 function observeContent() {
   const is4chan = window.location.hostname.includes('4chan.org');
-
-  setTimeout(() => {
-    const selector = is4chan
+  
+  const checkAndAddButtons = () => {
+    const selector = is4chan 
       ? '.fileThumb img, .fileThumb video'
-      : 'img[src]:not([data-testid="user-avatar"]):not([class*="Avatar"]), video:not([class*="Avatar"])';
+      : 'div[data-click-id="media"] img, div[data-click-id="media"] video, a[href*="/gallery/"] img, div[data-test-id="post-content"] img, div[data-test-id="post-content"] video, div.media-element img, div.media-element video';
 
-    document.querySelectorAll(selector).forEach(elem => {
-      if (elem.tagName === 'SOURCE') {
-        addDownloadButton(elem.parentElement);
-      } else {
+    const elements = document.querySelectorAll(selector);
+    elements.forEach(elem => {
+      if (!elem.closest('.reddit-download-btn-wrapper')) {
         addDownloadButton(elem);
       }
     });
-  }, 1000);
+    
+    setTimeout(checkAndAddButtons, 2000);
+  };
+
+  checkAndAddButtons();
 
   const observer = new MutationObserver((mutations) => {
     mutations.forEach((mutation) => {
-      if (mutation.type === 'attributes' && mutation.target.tagName) {
-        const elem = mutation.target;
-        if ((elem.tagName === 'IMG' || elem.tagName === 'VIDEO') &&
-          (!elem.getAttribute('alt')?.includes('avatar') || is4chan)) {
-          addDownloadButton(elem);
-        }
-      }
-
-      mutation.addedNodes.forEach((node) => {
-        if (node.nodeType === Node.ELEMENT_NODE) {
-          const selector = is4chan
-            ? '.fileThumb img, .fileThumb video'
-            : 'img[src]:not([data-testid="user-avatar"]):not([class*="Avatar"]), video:not([class*="Avatar"])';
-
-          const mediaElements = node.querySelectorAll(selector);
-          mediaElements.forEach(elem => {
-            if (elem.tagName === 'SOURCE') {
-              addDownloadButton(elem.parentElement);
-            } else {
-              addDownloadButton(elem);
-            }
-          });
-
-          if ((node.tagName === 'IMG' || node.tagName === 'VIDEO') &&
-            (!node.getAttribute('alt')?.includes('avatar') || is4chan)) {
-            addDownloadButton(node);
+      if (mutation.addedNodes.length > 0) {
+        mutation.addedNodes.forEach(node => {
+          if (node.nodeType === Node.ELEMENT_NODE) {
+            const mediaElements = node.querySelectorAll('img, video');
+            mediaElements.forEach(elem => {
+              if (!elem.closest('.reddit-download-btn-wrapper')) {
+                addDownloadButton(elem);
+              }
+            });
           }
-        }
-      });
+        });
+      }
     });
   });
 
   observer.observe(document.body, {
     childList: true,
-    subtree: true,
-    attributes: true,
-    attributeFilter: ['src', 'data-click-id']
+    subtree: true
   });
 }
 
@@ -155,4 +178,4 @@ if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', observeContent);
 } else {
   observeContent();
-} 
+}
