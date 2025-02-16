@@ -86,6 +86,7 @@ function addDownloadButton(mediaElement) {
       try {
         let filename = url.split('/').pop().split('?')[0];
         filename = filename.replace(/\.htm$/, '');
+
         if (!filename.includes('.')) {
             if (mediaElement.tagName === 'VIDEO' || mediaElement.tagName === 'SOURCE') {
                 filename += '.mp4';
@@ -105,27 +106,10 @@ function addDownloadButton(mediaElement) {
         }
         filename = `Savvit_${Date.now()}_${filename}`;
 
-        chrome.storage.sync.get({
-          downloadPath: 'Downloads/Savvit',
-          askSave: false,
-          addTitle: true,
-          subredditFolders: false
-        }, (settings) => {
-          let finalPath = settings.downloadPath;
-          
-          if (settings.subredditFolders && !window.location.hostname.includes('4chan.org')) {
-            const subreddit = window.location.pathname.split('/')[2];
-            if (subreddit) {
-              finalPath += '/' + subreddit;
-            }
-          }
-          
-          chrome.runtime.sendMessage({
-            action: 'download',
-            url: url,
-            filename: `${finalPath}/${filename}`,
-            saveAs: settings.askSave
-          });
+        chrome.runtime.sendMessage({
+          action: 'download',
+          url: url,
+          filename: filename
         });
       } catch (error) {
         console.error('Download failed:', error);
