@@ -3,11 +3,15 @@
   "name": "Savvit",
   "version": "0.0.0",
   "description": "Finally an extension that properly saves Reddit and 4chan posts!",
+  "action": {
+    "default_popup": "popup.html"
+  },
   "author": "Sen",
   "homepage_url": "https://github.com/CursedSen/Savvit",
   "permissions": [
     "downloads",
-    "activeTab"
+    "activeTab",
+    "storage"
   ],
 "host_permissions": [
     "*://*.reddit.com/*",
